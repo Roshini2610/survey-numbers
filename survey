@@ -1,0 +1,55 @@
+import requests
+from bs4 import BeautifulSoup
+
+def get_survey_numbers(district, mandal, village):
+    # URL of the website
+    url = "https://dharani.telangana.gov.in/knowLandStatus"
+
+    # Send a GET request to the URL
+    response = requests.get(url)
+
+    # Check if the request was successful
+    if response.status_code == 200:
+        # Parse the HTML content of the page
+        soup = BeautifulSoup(response.content, 'html.parser')
+
+        # Find the dropdowns for district, mandal, and village
+        district_dropdown = soup.find('select', {'id': 'ddlDistrict'})
+        mandal_dropdown = soup.find('select', {'id': 'ddlMandal'})
+        village_dropdown = soup.find('select', {'id': 'ddlVillage'})
+
+        # Find the options corresponding to the provided district, mandal, and village
+        district_option = district_dropdown.find('option', text=district)
+        mandal_option = mandal_dropdown.find('option', text=mandal)
+        village_option = village_dropdown.find('option', text=village)
+
+        # Extract the values corresponding to the selected options
+        district_value = district_option['value']
+        mandal_value = mandal_option['value']
+        village_value = village_option['value']
+
+        # Send a POST request to get the survey numbers
+        payload = {
+            'ddlDistrict': district_value,
+            'ddlMandal': mandal_value,
+            'ddlVillage': village_value
+        }
+        response = requests.post(url, data=payload)
+
+        # Parse the response to extract survey numbers
+        soup = BeautifulSoup(response.content, 'html.parser')
+        survey_numbers = [option.text for option in soup.find_all('option') if option.text.strip()]
+
+        return survey_numbers
+
+    else:
+        print("Failed to retrieve data from the website.")
+        return []
+
+# Example usage
+district = "Your District"
+mandal = "Your Mandal"
+village = "Your Village"
+
+survey_numbers = get_survey_numbers(district, mandal, village)
+print("Survey Numbers:", survey_numbers)
